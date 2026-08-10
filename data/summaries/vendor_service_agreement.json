@@ -1,0 +1,11 @@
+{
+  "parties": [
+    "Harborview Hotel Group",
+    "CrispClean Linen Services Inc."
+  ],
+  "effective_date": "2025-09-01",
+  "renewal_or_termination_notice_days": 30,
+  "payment_terms": "Client shall pay Vendor $8,400.00 per month, invoiced monthly in arrears, due net 30 from invoice date.",
+  "key_risk": "The liability cap is unusually low relative to the scale of potential loss, potentially costing Client more than $5,000 in guest compensation and reputational damage.",
+  "source": "vendor_service_agreement.pdf"
+}

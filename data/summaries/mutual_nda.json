@@ -1,0 +1,11 @@
+{
+  "parties": [
+    "Northgate Analytics Inc.",
+    "BrightPath Consulting LLC"
+  ],
+  "effective_date": "2026-01-15",
+  "renewal_or_termination_notice_days": 30,
+  "payment_terms": null,
+  "key_risk": "Section 4's three-year survival period is longer than the typical one-to-two-year industry standard for mutual NDAs of this kind, meaning confidentiality obligations continue well after the underlying business relationship - if any - has ended.",
+  "source": "mutual_nda.pdf"
+}

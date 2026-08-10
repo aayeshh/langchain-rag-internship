@@ -1,0 +1,11 @@
+{
+  "parties": [
+    "Riverside Family Dental Associates",
+    "Guardian Trust Dental Insurance Co."
+  ],
+  "effective_date": "2026-04-01",
+  "renewal_or_termination_notice_days": null,
+  "payment_terms": "Monthly premium is $46.50 per covered employee, billed to the Policyholder on the 1st of each month.",
+  "key_risk": "The $2,000 annual maximum benefit per individual is low relative to the cost of a single major procedure, meaning employees needing major work will likely face significant out-of-pocket costs even while 'covered.'",
+  "source": "dental_insurance_policy.pdf"
+}

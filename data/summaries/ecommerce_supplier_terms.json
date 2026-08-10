@@ -1,0 +1,11 @@
+{
+  "parties": [
+    "Northline Commerce Inc.",
+    "Pinecrest Manufacturing Co."
+  ],
+  "effective_date": "2026-06-01",
+  "renewal_or_termination_notice_days": 90,
+  "payment_terms": "net 45 from the invoice date",
+  "key_risk": "Section 5 lets Buyer unilaterally deduct chargebacks - including a 15% handling fee - without Supplier's prior authorization or an agreed inspection process, which creates real exposure to disputed or excessive deductions that Supplier has no contractual mechanism to contest before the money is withheld.",
+  "source": "ecommerce_supplier_terms.pdf"
+}

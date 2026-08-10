@@ -1,0 +1,11 @@
+{
+  "parties": [
+    "Meridian Properties LLC",
+    "Sarah Chen"
+  ],
+  "effective_date": "2026-03-01",
+  "renewal_or_termination_notice_days": 60,
+  "payment_terms": "Tenant shall pay Landlord monthly rent of $2,150.00, due on the 1st day of each month",
+  "key_risk": "Section 5 imposes an automatic renewal with only a 60-day opt-out window, which may commit Tenant to another full 12-month term at the then-current market rate with up to 8% rent increase",
+  "source": "residential_lease.docx"
+}
