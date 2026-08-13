@@ -13,6 +13,11 @@ __pycache__/
 .env.*
 !.env.example
 
+# Generated files
+chroma_db/
+data/summaries/
+.langchain_cache.db
+
 # macOS
 .DS_Store
 

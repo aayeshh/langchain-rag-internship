@@ -28,12 +28,21 @@ def _load_all_chunks(vectorstore) -> list[Document]:
     ]
 
 
-def build_hybrid_retriever(vectorstore):
+def build_hybrid_retriever(vectorstore, use_reranker: bool = False):
     """vectorstore: a persisted Chroma store already containing all chunks
     (old and new) from src.ingest. BM25 has no persistence of its own, so
     its index is rebuilt from the vector store's contents each time the
     app starts -- a local rebuild, not a re-embedding, so it costs no
-    API calls."""
+    API calls.
+
+    use_reranker: when True, wraps the ensemble retriever in a
+    ContextualCompressionRetriever using an EmbeddingsFilter -- this is the
+    "one deliberate pipeline change" Phase 2's before/after LangSmith
+    experiment compares. EmbeddingsFilter re-scores each already-retrieved
+    chunk by embedding similarity to the query and drops weak matches,
+    rather than an LLM-based reranker -- deliberately chosen so reranking
+    costs embedding calls (Gemini, generous free tier) instead of extra
+    chat-model calls (Groq, the tighter free tier)."""
     try:
         # LangChain 1.0+ moved EnsembleRetriever into langchain-classic.
         from langchain_classic.retrievers import EnsembleRetriever
@@ -53,7 +62,48 @@ def build_hybrid_retriever(vectorstore):
 
     vector_retriever = vectorstore.as_retriever(search_kwargs={"k": RETRIEVER_K})
 
-    return EnsembleRetriever(
+    ensemble = EnsembleRetriever(
         retrievers=[bm25_retriever, vector_retriever],
         weights=HYBRID_WEIGHTS,
     )
+
+    if not use_reranker:
+        return ensemble
+
+    try:
+        from langchain_classic.retrievers.document_compressors import EmbeddingsFilter
+    except ImportError:
+        from langchain.retrievers.document_compressors import EmbeddingsFilter
+
+    from langchain_core.runnables import RunnableLambda
+
+    from src.config import get_embeddings
+
+    # 0.75 turned out to be far too aggressive in practice -- cosine
+    # similarity between a natural-language question and its answering
+    # passage is often well below 0.7 even when highly relevant (they're
+    # different surface forms, not paraphrases of each other), so 0.75
+    # was silently filtering out EVERY candidate chunk on nearly every
+    # query, leaving the agent with empty context and no way to answer
+    # questions the baseline retriever handled correctly. 0.5 is a
+    # gentler cut that should still drop genuinely irrelevant near-misses
+    # without wiping out real matches.
+    compressor = EmbeddingsFilter(embeddings=get_embeddings(), similarity_threshold=0.5)
+
+    def rerank_with_fallback(query: str):
+        """Re-scores the hybrid retriever's own results and drops weak
+        matches -- but never returns fewer than zero usable chunks when
+        the hybrid retriever found something. If the threshold (whatever
+        it's set to) turns out to filter out every candidate for a given
+        query, that's a mis-tuned filter, not a real 'nothing relevant
+        exists' case -- so fall back to the unfiltered hybrid results
+        rather than leaving the agent worse off than no reranking at all.
+        This is the fix for the exact failure observed in testing: 0.75
+        emptied the context on questions the baseline answered fine."""
+        original_docs = ensemble.invoke(query)
+        if not original_docs:
+            return original_docs
+        filtered_docs = compressor.compress_documents(original_docs, query)
+        return list(filtered_docs) if filtered_docs else original_docs
+
+    return RunnableLambda(rerank_with_fallback)

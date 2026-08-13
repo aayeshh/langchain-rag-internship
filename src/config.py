@@ -42,8 +42,26 @@ HYBRID_WEIGHTS = [0.4, 0.6]  # [bm25, vector]
 # instead of Anthropic/OpenAI which require paid API keys. Swapping providers
 # only means changing these two lines and get_chat_model/get_embeddings below
 # -- nothing else in the project touches model provider specifics directly.
+#
+# Model choice matters here specifically because this project relies on
+# reliable tool-calling (search_documents, check_deadline_urgency,
+# draft_renewal_email). Groq's llama-3.3-70b-versatile is fast but its tool
+# calls occasionally come back malformed ("tool_use_failed" from the API).
+# openai/gpt-oss-20b (OpenAI's open-weight model, hosted on Groq) is built
+# for reliable function calling and is also on Groq's free tier -- use that
+# instead. If you hit tool_use_failed errors again, groq:openai/gpt-oss-120b
+# is the larger, even more reliable (but slower) alternative.
 CHAT_MODEL_NAME = "groq:openai/gpt-oss-20b"
-EMBEDDING_MODEL_NAME = "gemini-embedding-2"
+EMBEDDING_MODEL_NAME = "gemini-embedding-001"
+
+# Phase 2 (LangSmith eval) adds a second model role: the LLM-as-judge used by
+# the faithfulness evaluator. An eval run calls this once per dataset example
+# (30-50+ calls per experiment, and you'll run at least two experiments) --
+# stacking that onto the same Groq key used by the main agent risks hitting
+# its free-tier token/request limit fast. Gemini already has a paid-free-tier
+# presence in this project via embeddings, so the judge uses Gemini's chat
+# model too, keeping judge-eval traffic off Groq entirely.
+JUDGE_MODEL_NAME = "google_genai:gemini-3.5-flash-lite"
 
 
 def get_chat_model(temperature: float = 0):
@@ -52,6 +70,15 @@ def get_chat_model(temperature: float = 0):
     from langchain.chat_models import init_chat_model
 
     return init_chat_model(CHAT_MODEL_NAME, temperature=temperature)
+
+
+def get_judge_model(temperature: float = 0):
+    """The LLM-as-judge model for evaluators (src/eval/evaluators.py).
+    Deliberately a different provider (Gemini) than get_chat_model()'s Groq
+    -- see JUDGE_MODEL_NAME comment above."""
+    from langchain.chat_models import init_chat_model
+
+    return init_chat_model(JUDGE_MODEL_NAME, temperature=temperature)
 
 
 def get_embeddings():

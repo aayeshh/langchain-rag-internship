@@ -62,22 +62,29 @@ def _combine_pages(docs) -> str:
 
 
 def extract_summary(source_filename: str, full_text: str, model=None) -> ContractSummary:
-    if model is None:
-        from src.config import get_chat_model
+    from langsmith import traceable
 
-        model = get_chat_model()
+    @traceable(name="extract_contract_summary", run_type="chain")
+    def _extract() -> ContractSummary:
+        nonlocal model
+        if model is None:
+            from src.config import get_chat_model
 
-    structured_model = model.with_structured_output(ContractSummary)
-    result = structured_model.invoke(
-        "Extract the key details from this contract. If a field isn't "
-        "stated in the document, leave it unset rather than guessing.\n\n"
-        f"Document filename: {source_filename}\n\n"
-        f"Contract text:\n{full_text}"
-    )
-    # Belt-and-suspenders: force the source field to the real filename
-    # rather than trusting the model to copy it verbatim.
-    result.source = source_filename
-    return result
+            model = get_chat_model()
+
+        structured_model = model.with_structured_output(ContractSummary)
+        result = structured_model.invoke(
+            "Extract the key details from this contract. If a field isn't "
+            "stated in the document, leave it unset rather than guessing.\n\n"
+            f"Document filename: {source_filename}\n\n"
+            f"Contract text:\n{full_text}"
+        )
+        # Belt-and-suspenders: force the source field to the real filename
+        # rather than trusting the model to copy it verbatim.
+        result.source = source_filename
+        return result
+
+    return _extract()
 
 
 def save_summary(summary: ContractSummary) -> Path:
